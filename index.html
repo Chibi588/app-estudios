@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mi App de Estudios</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f6f8;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+
+        .materia {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+
+        .item {
+            margin: 5px 0;
+            padding: 5px;
+            background: #e9eef3;
+            border-radius: 5px;
+        }
+
+        .completado {
+            text-decoration: line-through;
+            background: #c8f7c5;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>📚 Mi Sistema de Estudios</h1>
+
+<input type="text" id="materiaInput" placeholder="Nueva materia">
+<button onclick="agregarMateria()">Agregar Materia</button>
+
+<div id="contenedor"></div>
+
+<script>
+    let datos = JSON.parse(localStorage.getItem("appEstudios")) || [];
+
+    function guardar() {
+        localStorage.setItem("appEstudios", JSON.stringify(datos));
+    }
+
+    function agregarMateria() {
+        let nombre = document.getElementById("materiaInput").value;
+        if (!nombre) return;
+
+        datos.push({
+            nombre: nombre,
+            apuntes: [],
+            tareas: [],
+            evaluaciones: []
+        });
+
+        guardar();
+        mostrar();
+        document.getElementById("materiaInput").value = "";
+    }
+
+    function agregarItem(index, tipo) {
+        let texto = prompt("Escribe:");
+        if (!texto) return;
+
+        datos[index][tipo].push({
+            texto: texto,
+            completado: false
+        });
+
+        guardar();
+        mostrar();
+    }
+
+    function cambiarEstado(materiaIndex, tipo, itemIndex) {
+        datos[materiaIndex][tipo][itemIndex].completado =
+            !datos[materiaIndex][tipo][itemIndex].completado;
+
+        guardar();
+        mostrar();
+    }
+
+    function subirImagen(materiaIndex, tipo) {
+        let input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+
+        input.onchange = function(event) {
+            let archivo = event.target.files[0];
+            let lector = new FileReader();
+
+            lector.onload = function() {
+                datos[materiaIndex][tipo].push({
+                    texto: "<img src='" + lector.result + "' width='150'>",
+                    completado: false
+                });
+
+                guardar();
+                mostrar();
+            };
+
+            lector.readAsDataURL(archivo);
+        };
+
+        input.click();
+    }
+
+    function mostrar() {
+        let contenedor = document.getElementById("contenedor");
+        contenedor.innerHTML = "";
+
+        datos.forEach((materia, i) => {
+            let div = document.createElement("div");
+            div.className = "materia";
+
+            div.innerHTML += "<h2>" + materia.nombre + "</h2>";
+
+            ["apuntes", "tareas", "evaluaciones"].forEach(tipo => {
+                div.innerHTML += "<h3>" + tipo.toUpperCase() + "</h3>";
+                div.innerHTML += `<button onclick="agregarItem(${i}, '${tipo}')">Agregar</button>`;
+                div.innerHTML += `<button onclick="subirImagen(${i}, '${tipo}')">Subir Imagen</button>`;
+
+                materia[tipo].forEach((item, j) => {
+                    let clase = item.completado ? "item completado" : "item";
+                    div.innerHTML += `
+                        <div class="${clase}" onclick="cambiarEstado(${i}, '${tipo}', ${j})">
+                            ${item.texto}
+                        </div>
+                    `;
+                });
+            });
+
+            contenedor.appendChild(div);
+        });
+    }
+
+    mostrar();
+</script>
+
+</body>
+</html>
